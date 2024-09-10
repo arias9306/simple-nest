@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Like, Repository } from 'typeorm';
 import { CreateTodoDto } from './dto/create-todo.dto';
+import { FilterDto } from './dto/filter.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
 import { Todo } from './entities/todo.entity';
 
@@ -12,12 +13,20 @@ export class TodoService {
     private todoRepository: Repository<Todo>,
   ) {}
 
-  create(createTodoDto: CreateTodoDto) {
-    return this.todoRepository.create(createTodoDto);
+  async create(createTodoDto: CreateTodoDto) {
+    const todo = new Todo();
+    todo.name = createTodoDto.name;
+    todo.isCompleted = createTodoDto.isCompleted;
+    return await this.todoRepository.save(todo);
   }
 
-  findAll() {
-    return this.todoRepository.find();
+  async findAll(filter: FilterDto) {
+    if (filter?.criteria) {
+      return await this.todoRepository.find({
+        where: { name: Like(`%${filter.criteria}%`) },
+      });
+    }
+    return await this.todoRepository.find();
   }
 
   findOne(id: number) {
