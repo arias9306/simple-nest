@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Like, Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { FilterDto } from './dto/filter.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
@@ -23,7 +23,7 @@ export class TodoService {
   async findAll(filter: FilterDto) {
     if (filter?.criteria) {
       return await this.todoRepository.find({
-        where: { name: Like(`%${filter.criteria}%`) },
+        where: { name: ILike(`%${filter.criteria}%`) },
       });
     }
     return await this.todoRepository.find();

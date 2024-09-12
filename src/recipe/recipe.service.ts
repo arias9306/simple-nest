@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { CreateRecipeDto } from './dto/create-recipe.dto';
+import { FilterRecipeDto } from './dto/filter-recipe.dto';
 import { UpdateRecipeDto } from './dto/update-recipe.dto';
 import { Recipe } from './entities/recipe.entity';
 
@@ -12,27 +13,52 @@ export class RecipeService {
     private recipeRepository: Repository<Recipe>,
   ) {}
 
-  create(createRecipeDto: CreateRecipeDto) {
-    return this.recipeRepository.create(createRecipeDto);
+  async create(createRecipeDto: CreateRecipeDto) {
+    const recipe = new Recipe();
+    recipe.name = createRecipeDto.name;
+    recipe.description = createRecipeDto.description;
+    recipe.isFavorite = createRecipeDto.isFavorite;
+
+    return await this.recipeRepository.save(createRecipeDto);
   }
 
-  findAll() {
-    return this.recipeRepository.find();
+  async findAll(filter: FilterRecipeDto) {
+    if (filter?.criteria) {
+      return await this.recipeRepository.find({
+        where: [
+          {
+            name: ILike(`%${filter.criteria}%`),
+          },
+          {
+            description: ILike(`%${filter.criteria}%`),
+          },
+        ],
+      });
+    }
+    return await this.recipeRepository.find();
   }
 
-  findOne(id: number) {
-    return this.recipeRepository.findOne({
-      where: {
-        id,
-      },
-    });
+  async findOne(id: number) {
+    const recipe = await this.recipeRepository.findOne({ where: { id } });
+    if (!recipe) {
+      throw new NotFoundException(`Recipe with id ${id} not found.`);
+    }
+    return recipe;
   }
 
-  update(id: number, updateRecipeDto: UpdateRecipeDto) {
-    return this.recipeRepository.update(id, updateRecipeDto);
+  async update(id: number, updateRecipeDto: UpdateRecipeDto) {
+    const changed = await this.recipeRepository.update(id, updateRecipeDto);
+
+    if (!changed.affected) {
+      throw new NotFoundException(`Recipe with id ${id} not found.`);
+    }
+    return this.findOne(id);
   }
 
-  remove(id: number) {
-    return this.recipeRepository.delete(id);
+  async remove(id: number) {
+    const removed = await this.recipeRepository.delete(id);
+    if (!removed.affected) {
+      throw new NotFoundException(`Recipe with id ${id} not found.`);
+    }
   }
 }

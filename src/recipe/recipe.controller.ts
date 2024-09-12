@@ -6,9 +6,11 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { CreateRecipeDto } from './dto/create-recipe.dto';
+import { FilterRecipeDto } from './dto/filter-recipe.dto';
 import { UpdateRecipeDto } from './dto/update-recipe.dto';
 import { RecipeService } from './recipe.service';
 
@@ -23,8 +25,8 @@ export class RecipeController {
   }
 
   @Get()
-  findAll() {
-    return this.recipeService.findAll();
+  findAll(@Query() filterDto: FilterRecipeDto) {
+    return this.recipeService.findAll(filterDto);
   }
 
   @Get(':id')
